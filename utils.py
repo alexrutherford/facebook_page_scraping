@@ -39,16 +39,16 @@ pageSleepTime=10
 
 def addTimestampToPage(id):
     '''
-    Adds current timestamp to page 
+    Adds current timestamp to page
     '''
     pagesCollection.update({'id':id},{'$set':{'checked':[int(time.time())]}})
-    
+
 def updatePageTimestamp(id):
     '''
-    Updates timestamp of page 
+    Updates timestamp of page
     '''
     pagesCollection.update({'id':id},{'$addToSet':{'checked':int(time.time())}})
-    
+
 def isPostInDb(id):
     '''
     Tests if a post is in post collection
@@ -69,7 +69,7 @@ def isPageInDb(id):
     Returns Bool
     '''
     nMatches=pagesCollection.find({'id':id}).count()
-    
+
     if nMatches==0:
         return False
     elif nMatches==1:
@@ -83,7 +83,7 @@ def countCollections():
     print '%d posts' % postsCollection.count()
     print '%d comments' % commentsCollection.count()
     print '%d likes' % likesCollection.count()
-    
+
 def addCommentsToDb(commentsData):
     nAdded=nAlready=0
     for comment in commentsData['data']:
@@ -93,10 +93,10 @@ def addCommentsToDb(commentsData):
         else:
             nAlready+=1
     logging.warning('%d comments added (%d already in DB)' % (nAdded,nAlready))
-    
+
 def addPageToDb(page):
     pagesCollection.insert_one(page)
-    
+
 def addLikesToDb(likes):
     nAdded=nAlready=0
     for like in likes['data']:
@@ -106,11 +106,11 @@ def addLikesToDb(likes):
         else:
             nAlready+=1
     logging.warning('%d likes added (%d already in DB)' % (nAdded,nAlready))
-    
+
 def addPostToDb(post):
     print 'Adding posts'
     postsCollection.insert_one(post)
-    
+
 def isLikeInDb(id):
     '''
     Tests if a like is in comments collection
@@ -124,7 +124,7 @@ def isLikeInDb(id):
     else:
         logging.warning('Duplicate like %s' % id)
         return True
-    
+
 def isCommentInDb(id):
     '''
     Tests if a comment is in comments collection
@@ -138,19 +138,19 @@ def isCommentInDb(id):
     else:
 #        logging.warning('Duplicate comment %s' % id)
         return True
-    
+
 ####################
 # Other functions
 ####################
-    
+
 def clean(s):
     if s:
         s=re.sub(',|;|:|"|\'|\?|\(|\)|\n|\t|\-|\=|\+',' ',s.lower())
         return s.strip()
     else:
-        return None    
+        return None
 
-    
+
 def handleResult(statusCode,returnText):
     '''
     Parses API call result to determine if successful
@@ -160,7 +160,7 @@ def handleResult(statusCode,returnText):
     if statusCode==200:
         # OK
         return True,False
-    
+
     if statusCode in [102,10,463,467]:
         # Access token expired
         logging.warning('API error: %d %s' % (statusCode,returnText))
@@ -180,29 +180,29 @@ def handleResult(statusCode,returnText):
     else:
         logging.warning('API error - unknown code %d %s' % (statusCode,returnText))
         return False, True
-    
-    
+
+
 ###################################################
 def getPostsFromPage(pageId,raw=False,limit=100):
 ###################################################
     '''
-    Requests list of posts, list of comments and 
+    Requests list of posts, list of comments and
     list of likes from a page
     Returns a list of JSON objects
     or if raw=True, a string description of posts(deprecated)
     Actually does adding of comments and likes
     '''
-    
+
     logging.info('Getting posts,comments,likes for page %s' % pageId)
-    
+
     tempUrl='https://graph.facebook.com/%s/posts?&limit=%d&access_token=%s' % (pageId,postsLimit,ACCESSTOKEN)
-    
+
     out=[]
     outFull=[]
-    
+
     comments=None
     likes=None
-    
+
     r=requests.get(tempUrl)
     ######################################################
     success=None
@@ -223,49 +223,49 @@ def getPostsFromPage(pageId,raw=False,limit=100):
         time.sleep(nWait)
         nAttempts+=1
     ######################################################
-    
+
     for n,d in enumerate(r.json()['data']):
-        
+
         time.sleep(postSleepTime)
 
-        
+
         name=d.get('name')
         id=d.get('id')
         print 'Post %d %s %s' % (n,name,id)
-        
+
         message=d.get('message')
         if message:
             message=clean(message)
         else:
             logging.warning('No message for post %s' % d['id'])
-        
+
         description=d.get('description')
         if description:
             description=clean(description)
         else:
             logging.warning('No description for post %s' % d['id'])
-        
+
         caption=d.get('caption')
         if caption:
             caption=clean(caption)
         else:
             logging.warning('No caption for post %s' % d['id'])
-        
+
         d['page_id']=pageId
         d['retrieved']=time.time()
-        
+
         if d.get('icon'):del d['icon']
         if d.get('picture'):del d['picture']
         if d.get('privacy'):del d['privacy']
         # Don't need these
-        
+
         try:
             shareCount=d['shares']['count']
             d['shares']=shareCount
         except:
             pass
         # Simplify this
-        
+
         if message:
 #            print message
             out.append(message)
@@ -299,13 +299,13 @@ def getPostsFromPage(pageId,raw=False,limit=100):
                     d['en_caption']=enCaption
                 except:
                     enCaption=None
-                    
+
         try:
             comments=d['comments']
             del d['comments']
         except:
             comments=None
-        
+
         if comments:
             logging.info('Getting comments...')
             commentData=getComments(comments,pageId)
@@ -314,29 +314,29 @@ def getPostsFromPage(pageId,raw=False,limit=100):
 #                print 'Comments data:',c.keys()
 #                print 'Likes:',c[u'user_likes'],c.get('likes')
             addCommentsToDb(commentData)
-            
+
             # TODO get comment likes
-            
+
         try:
             likes=d['likes']
             del d['likes']
         except:
             likes=None
-        
+
         if likes:
             logging.info('Getting likes...')
             likeData=getLikes(likes,pageId,id)
             # This does all the paging
             addLikesToDb(likeData)
 
-        
-        outFull.append(d)       
-    
+
+        outFull.append(d)
+
     if raw:
         '\n'.join(out)
         pass # return string
     else:
-        return outFull,comments,likes    
+        return outFull,comments,likes
 
 ##################################
 def getNextLikes(nextToken):
@@ -346,13 +346,13 @@ def getNextLikes(nextToken):
     '''
 #    logging.warning('Getting next likes: %s' % nextToken)
     res=requests.get(nextToken)
-    
+
     if not res.status_code==200:
         logging.warning('Error with next likes data %d %s' % (res.status_code,res.text))
         return None
     else:
         return res.json()
-    
+
 ##################################
 def getNextComments(nextToken):
 ##################################
@@ -360,13 +360,13 @@ def getNextComments(nextToken):
     Given a paging token for next page of likes returns the raw data
     '''
     res=requests.get(nextToken)
-    
+
     if not res.status_code==200:
         logging.warning('Error with next comments data %d' % res.status_code)
         return None
     else:
         return res.json()
-    
+
 ##################################
 def getComments(comments,pageId):
 ##################################
@@ -375,34 +375,34 @@ def getComments(comments,pageId):
     [paging,data]. If paging information is present, keep
     requesting pages
     '''
-    
+
     if comments.get('paging'):
-        
+
         current=comments
-        
+
         while current['paging'].get('next'):
             logging.info('Paging comments...')
             current=getNextComments(current['paging']['next'])
             comments['data'].extend(current['data'])
-            
+
             if not current.get('paging'):
                 break
     return comments
-    
+
 ####################################
 def getLikes(likes,pageId,id):
 ####################################
     '''
     Takes a dictionary of like data from API with keys
-    [paging,data], pageId and post id. If paging information is present, keep 
+    [paging,data], pageId and post id. If paging information is present, keep
     requesting pages
     '''
-    
-    
+
+
     if likes.get('paging'):
         current=likes
-        print '>>>',likes.keys()
-        print '>>>',current.keys()
+        #print '>>>',likes.keys()
+        #print '>>>',current.keys()
         while current['paging'].get('next'):
             logging.info('Paging likes... %s' % current['paging']['next'])
             current=getNextLikes(current['paging']['next'])
@@ -412,17 +412,17 @@ def getLikes(likes,pageId,id):
             else:
                 break
             # TODO better error handling
-                
+
         print 'Got %d likes after paging' % len(likes['data'])
 #    print 'Likes type %s' % type(likes)
 #    print likes.keys()
-    
+
     for like in likes['data']:
         like['id']='%s_%s' % (id,like['id'])
         # Make a unique like ID made up of post id_likeid
         like['parent_id']=id
         # Keep parent id of comment/post for getting most liked content
-    
+
 #    print 'Likes',likes.keys()
 #    print likes.get('paging')
 #    print likes['data'][0]
