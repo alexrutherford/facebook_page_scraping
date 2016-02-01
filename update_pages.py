@@ -37,11 +37,6 @@ else:
     print 'DB error'
     sys.exit(1)
 
-# In[3]:
-
-#hdlr = logging.FileHandler('log.log')
-#formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-#hdlr.setFormatter(formatter)
 
 logging.basicConfig(level=logging.INFO,
                     filename='log.log', # log to this file
@@ -52,6 +47,7 @@ logging.basicConfig(level=logging.INFO,
 
 cur=pagesCollection.find({'checked':{'$exists':False},'relevant':{'$ne':False}},no_cursor_timeout=True)
 cur=pagesCollection.find({'relevant':{'$ne':False}},no_cursor_timeout=True).sort('checked.-1',1)
+
 # Get all pages that have yet to be checked
 # Change this next to be pages sorted by last time checked
 
