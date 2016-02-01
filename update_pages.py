@@ -12,8 +12,30 @@ import logging
 import collections
 import pymongo,time
 from secrets import *
-from utils import *
 
+if len(sys.argv)>1:
+    db=sys.argv[1]
+else:
+    db='fb'
+
+assert db in ['unicef','sv','fb']
+
+answer=raw_input('Update %s DB?' % db)
+if answer.lower().strip() in ['y','yes']:
+    print 'OK'
+else:
+    print 'Exiting'
+    sys.exit(1)
+
+if db=='fb':
+    from utils import *
+elif db=='sv'
+    from utils_sv import *
+elif db=='unicef'
+    from utils_unicef import *
+else:
+    print 'DB error'
+    sys.exit(1)
 
 # In[3]:
 
@@ -28,8 +50,8 @@ logging.basicConfig(level=logging.INFO,
 
 # In[4]:
 
-cur=pagesCollection.find({'checked':{'$exists':False},'relevant':{'$ne':False}})
-cur=pagesCollection.find({'relevant':{'$ne':False}}).sort('checked.-1',1)
+cur=pagesCollection.find({'checked':{'$exists':False},'relevant':{'$ne':False}},no_cursor_timeout=True)
+cur=pagesCollection.find({'relevant':{'$ne':False}},no_cursor_timeout=True).sort('checked.-1',1)
 # Get all pages that have yet to be checked
 # Change this next to be pages sorted by last time checked
 
