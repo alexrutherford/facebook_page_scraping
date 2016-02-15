@@ -13,25 +13,36 @@ import collections
 import pymongo,time
 from secrets import *
 
+ACCESSTOKEN=ACCESSTOKEN2
+# Hack
+
+force=False
+
 if len(sys.argv)>1:
     db=sys.argv[1]
 else:
     db='fb'
 
+if len(sys.argv)>2:
+    if sys.argv[2]=='-f':
+        force=True
+
 assert db in ['unicef','sv','fb']
 
-answer=raw_input('Update %s DB?' % db)
-if answer.lower().strip() in ['y','yes']:
-    print 'OK'
-else:
-    print 'Exiting'
-    sys.exit(1)
+if not force:
+
+    answer=raw_input('Update %s DB?' % db)
+    if answer.lower().strip() in ['y','yes']:
+        print 'OK'
+    else:
+        print 'Exiting'
+        sys.exit(1)
 
 if db=='fb':
     from utils import *
-elif db=='sv'
+elif db=='sv':
     from utils_sv import *
-elif db=='unicef'
+elif db=='unicef':
     from utils_unicef import *
 else:
     print 'DB error'

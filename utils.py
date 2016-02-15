@@ -19,7 +19,7 @@ likesCollection=db.likes
 
 LIMIT=1000
 # Page limit
-postsLimit=250
+postsLimit=100
 # Hard limit from API=250
 
 nSkip=5
@@ -29,8 +29,8 @@ nSkip=5
 nWait=60
 # Wait between API errors
 
-postSleepTime=0.4
-pageSleepTime=10
+postSleepTime=0.3
+pageSleepTime=8
 # Pause so API not thrashed
 
 ####################
