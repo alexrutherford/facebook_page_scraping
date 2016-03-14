@@ -175,7 +175,7 @@ def handleResult(statusCode,returnText):
         return False,True
     elif statusCode in [400]:
         # Skip
-        logging.warning('API errorLpage migrated? - skipping: %d %s' % (statusCode,returnText))
+        logging.warning('API error,page migrated? - skipping: %d %s' % (statusCode,returnText))
         return False,True
     else:
         logging.warning('API error - unknown code %d %s' % (statusCode,returnText))
@@ -183,7 +183,7 @@ def handleResult(statusCode,returnText):
 
 
 ###################################################
-def getPostsFromPage(pageId,raw=False,limit=100):
+def getPostsFromPage(pageId,raw=False,limit=100,since=None,until=None):
 ###################################################
     '''
     Requests list of posts, list of comments and
@@ -196,6 +196,11 @@ def getPostsFromPage(pageId,raw=False,limit=100):
     logging.info('Getting posts,comments,likes for page %s' % pageId)
 
     tempUrl='https://graph.facebook.com/%s/posts?&limit=%d&access_token=%s' % (pageId,postsLimit,ACCESSTOKEN)
+    # since=2011-07-01&until=2012-08-08&
+
+    if since and until:
+        tempUrl+='&since=%s&until%s' % (since,until)
+        logging.info('....between %s and %s' % (since,until))
 
     out=[]
     outFull=[]
@@ -227,7 +232,6 @@ def getPostsFromPage(pageId,raw=False,limit=100):
     for n,d in enumerate(r.json()['data']):
 
         time.sleep(postSleepTime)
-
 
         name=d.get('name')
         id=d.get('id')
@@ -323,11 +327,14 @@ def getPostsFromPage(pageId,raw=False,limit=100):
         except:
             likes=None
 
-        if likes:
-            logging.info('Getting likes...')
-            likeData=getLikes(likes,pageId,id)
-            # This does all the paging
-            addLikesToDb(likeData)
+        if False:
+            if likes:
+                logging.info('Getting likes...')
+                likeData=getLikes(likes,pageId,id)
+                # This does all the paging
+                addLikesToDb(likeData)
+        else:
+            print 'Skipping likes'
 
 
         outFull.append(d)
